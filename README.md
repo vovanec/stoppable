@@ -7,9 +7,9 @@ API documentation: https://godoc.org/github.com/vovanec/stoppable
 Example usages:
 
 1. Stopping task using polling.
-    
+
     ```
-    
+
 	task := NewTask(...optional stop timeout...)
 	go task.Run(func(c TaskChecker) error {
 		for !c.ShouldStop() {
@@ -27,9 +27,9 @@ Example usages:
 
 
 2. Stopping task using channel.
-    
+
     ```
-    
+
 	task := NewTask(...optional stop timeout...)
 	go task.Run(func(c TaskChecker) error {
 		for {
