@@ -1,6 +1,10 @@
 # stoppable
 
-This package implements stoppable tasks. Example usages:
+This package implements stoppable tasks.
+
+API documentation: https://godoc.org/github.com/vovanec/stoppable
+
+Example usages:
 
 1. Stopping task using polling.
     
