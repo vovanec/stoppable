@@ -64,10 +64,16 @@ type TaskFunc func(TaskChecker) error
 
 // Instance of Task represents a task that can be stopped.
 type Task interface {
+	// Run starts execution of a TaskFunc function. This method blocks until fh is completed
+	// so typically needs to be executed in a separate goroutine.
 	Run(TaskFunc)
+	// TellStop tells TaskFunc function that is being executed to stop execution.
 	TellStop()
+	// Wait returns a channel that waits for TaskFunc function to finish and returns its error.
 	Wait() <-chan error
+	// Stop is a convenience function which calls TellStop, waits for TaskFunc function to finish and return its error.
 	Stop() error
+	// IsStopped returns true if task is already finished, otherwise false.
 	IsStopped() bool
 }
 
@@ -94,8 +100,7 @@ func NewTask(stopTimeout time.Duration) Task {
 	}
 }
 
-// Run starts execution of a TaskFunc function. This method blocks until fh is completed
-// so typically needs to be executed in a separate goroutine.
+
 func (t *task) Run(fn TaskFunc) {
 
 	var err error
@@ -112,14 +117,12 @@ func (t *task) Run(fn TaskFunc) {
 	err = fn(&taskChecker{task: t})
 }
 
-// TellStop tells TaskFunc function that is being executed to stop execution.
 func (t *task) TellStop() {
 
 	atomic.StoreInt32(&t.stopped, 1)
 	close(t.stopChan)
 }
 
-// Wait waits for TaskFunc function to finish and returns its error.
 func (t *task) Wait() <-chan error {
 
 	ch := make(chan error)
@@ -132,7 +135,6 @@ func (t *task) Wait() <-chan error {
 	return ch
 }
 
-// Stop is a convenience function which calls TellStop, waits for TaskFunc function to finish and return its error.
 func (t *task) Stop() error {
 
 	if t.IsStopped() {
@@ -149,7 +151,6 @@ func (t *task) Stop() error {
 	}
 }
 
-// IsStopped returns true if task is already finished, otherwise false.
 func (t *task) IsStopped() bool {
 	if atomic.LoadInt32(&t.stopped) > 0 {
 		return true
