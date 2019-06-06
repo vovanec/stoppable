@@ -10,6 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var unexpectedErr = errors.New("something unexpected happened")
+
+
 func TestNewTask(t *testing.T) {
 
 	var (
@@ -76,6 +79,24 @@ func TestTask_StopWithTimeout(t *testing.T) {
 	assert.Nil(t, err)
 	elapsed := time.Now().Sub(tStart)
 	assert.True(t, elapsed >= stopTimeout && elapsed < taskTimeout)
+	assert.True(t, task.IsStopped())
+}
+
+func TestTaskWait(t *testing.T) {
+
+	var (
+		task   = NewTask(time.Second * 2)
+	)
+
+	go task.Run(func(checker TaskChecker) error {
+
+		time.Sleep(time.Millisecond * 500)
+		return unexpectedErr
+	})
+
+	assert.False(t, task.IsStopped())
+	err := <- task.Wait()
+	assert.Equal(t, unexpectedErr, err)
 	assert.True(t, task.IsStopped())
 }
 

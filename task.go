@@ -76,6 +76,7 @@ type task struct {
 	stopTimeout time.Duration
 	doneChan    chan struct{}
 	stopChan    chan struct{}
+	waitChan	chan error
 	stopped     int32
 	err         error
 }
@@ -90,6 +91,7 @@ func NewTask(stopTimeout time.Duration) Task {
 	return &task{
 		doneChan:    make(chan struct{}),
 		stopChan:    make(chan struct{}),
+		waitChan:    make(chan error),
 		stopTimeout: stopTimeout,
 	}
 }
@@ -109,6 +111,11 @@ func (t *task) Run(fn TaskFunc) {
 		close(t.doneChan)
 	}()
 
+	go func() {
+		<-t.doneChan
+		t.waitChan <- t.err
+	}()
+
 	err = fn(&taskChecker{task: t})
 }
 
@@ -117,19 +124,6 @@ func (t *task) TellStop() {
 
 	atomic.StoreInt32(&t.stopped, 1)
 	close(t.stopChan)
-}
-
-// Wait waits for TaskFunc function to finish and returns its error.
-func (t *task) Wait() <-chan error {
-
-	ch := make(chan error)
-
-	go func() {
-		<-t.doneChan
-		ch <- t.err
-	}()
-
-	return ch
 }
 
 // Stop is a convenience function which calls TellStop, waits for TaskFunc function to finish and return its error.
@@ -155,6 +149,11 @@ func (t *task) IsStopped() bool {
 		return true
 	}
 	return false
+}
+
+// Wait waits for TaskFunc function to finish and returns its error.
+func (t *task) Wait() <-chan error {
+	return t.waitChan
 }
 
 type taskChecker struct {
