@@ -6,7 +6,7 @@ API documentation: https://godoc.org/github.com/vovanec/stoppable
 
 Example usages:
 
-1. Stopping task using polling.
+1. Wait task for finish using polling.
 
     ```
 
@@ -26,7 +26,7 @@ Example usages:
 	```
 
 
-2. Stopping task using channel.
+2. Wait task for finish using channel.
 
     ```
 
