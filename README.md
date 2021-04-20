@@ -10,7 +10,7 @@ Example usages:
 
     ```
 
-	task := NewTask(...optional stop timeout...)
+	task := NewTask(WithStopTimeout(...optional stop timeout...))
 	go task.Run(func(c TaskChecker) error {
 		for !c.ShouldStop() {
 			// ... do some work here
@@ -30,7 +30,7 @@ Example usages:
 
     ```
 
-	task := NewTask(...optional stop timeout...)
+	task := NewTask()
 	go task.Run(func(c TaskChecker) error {
 		for {
 			select {
