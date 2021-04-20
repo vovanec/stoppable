@@ -1,47 +1,5 @@
 package stoppable
 
-/* This package implements stoppable tasks. Example usages:
-
-	// 1. Using polling.
-	task := NewTask(...optional stop timeout...)
-	go task.Run(func(c TaskChecker) error {
-		for !c.ShouldStop() {
-			// ... do some work here
-		}
-		// task has been told to stop...
-		return nil // or some error
-	})
-
-	// ..... after some time .....
-	if err := task.Stop(); err != nil {
-		// handle error
-	}
-
-
-	// 2. Using channels.
-	task := NewTask(...optional stop timeout...)
-	go task.Run(func(c TaskChecker) error {
-		for {
-			select {
-			case <- c.StopChan():
-				// task has been told to stop...
-				return nil
-			// case data := <- someWorkChannel:
-			// ... do work ...
-			}
-
-		}
-	})
-
-	// ..... after some time .....
-	task.TellStop()
-	if err := <-task.Wait(); err != nil {
-		// handle error
-	}
-
-Inspired by https://github.com/matryer/runner
-*/
-
 import (
 	"math"
 	"sync"
@@ -62,7 +20,7 @@ type TaskChecker interface {
 // use one of methods of TaskChecker instance as a signal to stop execution.
 type TaskFunc func(TaskChecker) error
 
-// Instance of Task represents a task that can be stopped.
+// Task represents a runnable task that can be stopped.
 type Task interface {
 	// Run starts execution of a TaskFunc function. This method blocks until fh is completed
 	// so typically needs to be executed in a separate goroutine.
@@ -88,19 +46,37 @@ type task struct {
 	err         error
 }
 
-// NewTask returns an instance of Task
-func NewTask(stopTimeout time.Duration) Task {
+type TaskOption func (t *task)
 
-	if stopTimeout == 0 {
-		stopTimeout = defStopTimeout
+// WithStopTimeout adds stop timeout for a task - how long task should be awaited
+// for normal completion before Stop returns. Stop timeout of 0 means infinite timeout.
+func WithStopTimeout(d time.Duration) TaskOption {
+	return func(t *task) {
+		if d < 0 {
+			panic("task stop timeout must be positive or zero duration")
+		}
+
+		if d > 0 {
+			t.stopTimeout = d
+		}
 	}
+}
 
-	return &task{
+// NewTask returns an instance of Task
+func NewTask(opts ...TaskOption) Task {
+
+	t := &task{
 		doneChan:    make(chan struct{}),
 		stopChan:    make(chan struct{}),
 		waitChan:    make(chan error),
-		stopTimeout: stopTimeout,
+		stopTimeout: defStopTimeout,
 	}
+
+	for _, opt := range opts {
+		opt(t)
+	}
+
+	return t
 }
 
 

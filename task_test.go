@@ -16,7 +16,7 @@ var unexpectedErr = errors.New("something unexpected happened")
 func TestNewTask(t *testing.T) {
 
 	var (
-		task   = NewTask(time.Second * 2)
+		task   = NewTask(WithStopTimeout(time.Second * 2))
 		cycles int
 	)
 
@@ -44,7 +44,7 @@ func TestNewTask(t *testing.T) {
 
 func TestTaskError(t *testing.T) {
 
-	task := NewTask(time.Second * 2)
+	task := NewTask(WithStopTimeout(time.Second * 2))
 
 	go task.Run(func(_ TaskChecker) error {
 		return errors.New("unexpected error")
@@ -64,7 +64,7 @@ func TestTask_StopWithTimeout(t *testing.T) {
 
 	stopTimeout := time.Millisecond * 100
 	taskTimeout := time.Millisecond * 500
-	task := NewTask(stopTimeout)
+	task := NewTask(WithStopTimeout(stopTimeout))
 
 	tStart := time.Now()
 	go task.Run(func(_ TaskChecker) error {
@@ -85,7 +85,7 @@ func TestTask_StopWithTimeout(t *testing.T) {
 func TestTaskWait(t *testing.T) {
 
 	var (
-		task   = NewTask(time.Second * 2)
+		task   = NewTask(WithStopTimeout(time.Second * 2))
 	)
 
 	go task.Run(func(checker TaskChecker) error {
@@ -102,7 +102,7 @@ func TestTaskWait(t *testing.T) {
 
 func ExampleTask() {
 
-	task := NewTask(0)
+	task := NewTask(WithStopTimeout(0))
 	go task.Run(func(c TaskChecker) error {
 		for !c.ShouldStop() {
 			time.Sleep(time.Millisecond * 100)
@@ -117,7 +117,7 @@ func ExampleTask() {
 	}
 	fmt.Println(task.IsStopped())
 
-	task = NewTask(0)
+	task = NewTask(WithStopTimeout(0))
 	go task.Run(func(c TaskChecker) error {
 		<-c.StopChan()
 		log.Println("task has been told to stop")
@@ -131,7 +131,7 @@ func ExampleTask() {
 	fmt.Println(task.IsStopped())
 
 	//
-	task = NewTask(0)
+	task = NewTask(WithStopTimeout(0))
 	go task.Run(func(c TaskChecker) error {
 		<-c.StopChan()
 		log.Println("task has been told to stop")
